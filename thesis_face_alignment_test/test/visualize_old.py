@@ -5,18 +5,18 @@ from scipy.spatial.transform import Rotation as R
 import matplotlib.pyplot as plt
 
 # Load 3D mesh
-mesh = trimesh.load("video2_frame0/mesh.ply", process=False)
-vertices = mesh.vertices  # shape: (N, 3)
-
+mesh = trimesh.load("video3_frame0/mesh.ply", process=False)
+vertices = mesh.vertices 
 # Load 2D landmarks from 3DDFA-V3
-landmarks_data = np.load("video2_frame0/00000.npy", allow_pickle=True).item()
-landmarks_2d = landmarks_data['ldm68']  # shape should be (68, 2)
+landmarks_data = np.load("video3_frame0/00000.npy", allow_pickle=True).item()
+landmarks_2d = landmarks_data['ldm68']  
 print("Landmarks 2D shape:", landmarks_2d.shape)
 
+
 # Load MonoNPHM transformation parameters
-trans = np.load("video2_frame0/trans.npy")  # (3,)
-scale = np.load("video2_frame0/scale.npy").item()
-rot = np.load("video2_frame0/rot.npy")
+trans = np.load("video3_frame0/trans.npy")  # (3,)
+scale = np.load("video3_frame0/scale.npy").item()  # scalar
+rot = np.load("video3_frame0/rot.npy")
 
 # Handle rotation matrix
 if rot.shape == (1, 3, 3):
@@ -28,27 +28,23 @@ elif rot.shape == (1, 3):
 else:
     raise ValueError("Unexpected rot.npy shape:", rot.shape)
 
-# extra_rotation = R.from_euler('y', np.deg2rad(90)).as_matrix()
-# combined_rotation = extra_rotation @ rot_matrix
-
-# # # ✅ Apply manual shift to translation
-# manual_shift = np.array([0.2, 0.05, 0.05])  # tweak these values
-# trans = trans + manual_shift
-
 # Apply rotation and translation
-transformed = vertices + trans
-projected_2d = transformed[:, :2] * scale * 224  # weak perspective projection
-projected_2d[:, 1] *= -1  # Flip y-axis
+transformed = vertices @ rot_matrix.T + trans
 
-# Image
-image = cv2.imread("video2_frame0/00000.png")
+# Custom scale factor to enlarge the face (increase if face still too small)
+scale_factor = 600  
+projected_2d = transformed[:, :2] * scale * scale_factor
+projected_2d[:, 1] *= -1  
+
+# Load image to get dimensions
+image = cv2.imread("video3_frame0/00000.png")
 h, w = image.shape[:2]
 
-# Adjust projection for display alignment
-projected_2d[:, 0] += w // 1.75
-projected_2d[:, 1] += h // 3
+# Center face in the middle of the image
+projected_2d[:, 0] += w  
+projected_2d[:, 1] += h // 2.5
 
-# Use MonoNPHM's landmark indices (from eval.py)
+# Use MonoNPHM's landmark indices
 lm_inds = np.array(
     [2212, 3060, 3485, 3384, 3386, 3389, 3418, 3395, 3414, 3598, 3637,
      3587, 3582, 3580, 3756, 2012, 730, 1984, 3157, 335, 3705, 3684,
@@ -59,26 +55,28 @@ lm_inds = np.array(
      3509, 2786]
 )
 
-# Extract only the landmark points from projected MonoNPHM mesh
+# Extract projected landmarks
 projected_landmarks = projected_2d[lm_inds]
 
-# Draw MonoNPHM landmarks (red)
+# ---- Visualization 1: Isolated scatter (no image) ----
+plt.figure()
+plt.scatter(projected_landmarks[:, 0], projected_landmarks[:, 1], c='red', s=10)
+plt.gca().invert_yaxis()
+plt.axis("equal")
+plt.title("MonoNPHM Projected Landmarks (Scaled and Centered)")
+plt.show()
+
+# # --- Draw original 2D landmarks for comparison ---
+# for (x, y) in landmarks_2d.astype(int):
+#     cv2.circle(image, (x, y), 2, (255, 255, 0), -1)
+
+# ---- Visualization 2: Overlay on image ----
 for (x, y) in projected_landmarks.astype(int):
     if 0 <= x < w and 0 <= y < h:
         cv2.circle(image, (x, y), 2, (0, 0, 255), -1)
 
-# # Draw 3DDFA landmarks (blue)
-# for (x, y) in landmarks_2d.astype(int):
-#     cv2.circle(image, (x, y), 2, (255, 255, 0), -1)
-
-# Save
-# cv2.imwrite("video2_frame0/test.png", image)
-# print("✅ Saved test.png")
-
-# Plot image and red 2D landmarks
-plt.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
-plt.scatter(projected_landmarks[:, 0], projected_landmarks[:, 1], c='red', s=10, label='MonoNPHM Landmarks')
-plt.legend()
-plt.title("Projected 3D Landmarks (MonoNPHM) on Image")
-plt.axis("off")
-plt.show()
+# Save or show image
+# cv2.imwrite("video3_frame0/overlay_result.png", image)
+cv2.imshow("Overlay", image)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
