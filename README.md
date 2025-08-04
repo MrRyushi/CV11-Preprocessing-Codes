@@ -81,7 +81,7 @@ This project is for research and academic use only. Please refer to the original
 
 ## 👥 Acknowledgments
 
-- [MonoNPHM](https://github.com/YudongYao/MonoNPHM) for the 3D face mesh generation model.
-- [LRS3 Dataset](https://www.robots.ox.ac.uk/~vgg/data/lip_reading/lrs3.html) by the University of Oxford VGG group for large-scale visual speech recognition research.
-- [OuluVS2 Dataset](https://www.oulu.fi/en/university/faculties-and-units/faculty-information-technology-and-electrical-engineering/center-machine-vision-and-signal-analysis/data-collections/ouluvs2) provided by the University of Oulu, for research on multi-view and multi-modal visual speech recognition.
+- [MonoNPHM](https://github.com/SimonGiebenhain/MonoNPHM) for the 3D face mesh generation model.
+- [LRS3 Dataset](https://mmai.io/datasets/lip_reading/) by the University of Oxford VGG group for large-scale visual speech recognition research.
+- [OuluVS2 Dataset] provided by the University of Oulu, for research on multi-view and multi-modal visual speech recognition.
 
